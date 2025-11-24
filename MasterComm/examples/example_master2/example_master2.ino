@@ -3,7 +3,8 @@
 MasterComm master;
 
 // MAC del robot de prueba
-uint8_t robotPrueba[] = {0x5C,0xCF,0x7F,0xB5,0x64,0x10};
+//uint8_t robotPrueba[] = {0x5C,0xCF,0x7F,0xB5,0x64,0x10};
+uint8_t robot1[] = {0x5C,0xCF,0x7F,0x01,0x65,0x6B};
 
 // Variables para los datos a enviar
 int targetID;
@@ -16,7 +17,7 @@ void setup() {
     while (!Serial);  // Esperar Serial listo
 
     // Agregar robot
-    master.addRobotMAC(robotPrueba);
+    master.addRobotMAC(robot1);
 
     // Iniciar maestro
     master.begin("OPPO A53", "611b10a883c5", 8888);

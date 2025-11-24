@@ -12,6 +12,8 @@ void ESPNOWReceiveCallback(uint8_t *mac, uint8_t *incomingMsg, uint8_t len) {
   buffer[len] = 0;                      // Añade terminación de cadena
 
   globalSlave->processIncoming(buffer); // Llama al método de la instancia para procesar el mensaje
+  Serial.print("Mensaje recibido: ");
+  Serial.println(buffer);
 }
 
 
