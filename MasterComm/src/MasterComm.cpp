@@ -79,6 +79,7 @@ void MasterComm::sendToRobot(int id, const char *msg) {
         Serial.printf("ID robot inválido: %d\n", id);
         return;
     }
+    Serial.printf("Enviando al robot %d (idx %d): %s\n", id, idx, msg);
     esp_now_send(_robotMACs[idx], (uint8_t*)msg, strlen(msg)); // Envía mensaje por ESP-NOW
     Serial.printf("Enviado al robot %d (idx %d)\n", id, idx);
 }
