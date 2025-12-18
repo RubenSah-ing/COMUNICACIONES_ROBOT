@@ -1,3 +1,8 @@
+# !/usr/bin/env python3
+# Autor: Ruben Sahuquillo y Pablo Navarro
+# Libreria de comunicacion con modulos robot utilizando TCP y gestion de interfaz web con Flask.
+
+
 # --- LIBRERIAS --- #
 import socket
 import time
@@ -5,6 +10,7 @@ import cv2
 from flask import Flask, render_template, Response, redirect, url_for
 import struct
 
+# --- CLASE INTERFAZ FLASK --- #
 class Interface:
     """Clase para manejar la interfaz web Flask del sistema de robots."""
     
@@ -81,6 +87,7 @@ class Interface:
         self.app.run(host=host, port=port, debug=debug)
 
 
+# --- CLASE COMUNICACION ROBOT --- #
 class RobotComm:
 
     # - Metodo constructor - #
@@ -166,7 +173,7 @@ class RobotComm:
     def recibirRespuesta(self):
         """
         Descripcion: Esta funcion gestiona la respuesta recibida del maestro
-       Args: None
+        Args: None
         Returns: None
         """
         try:
