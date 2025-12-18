@@ -1,27 +1,30 @@
 from ComRobotLib import RobotComm
 import time
-# Crear instancia con datalog activo
-robot_comm = RobotComm(logfile="datalog.txt")
+
+#robot_comm = RobotComm(ip="192.168.137.232", logfile="datalog.txt")
+robot_comm = RobotComm(ip="10.74.94.237", logfile="datalog.txt")
 
 # Registrar robots
 robot_comm.addRobot(0)
 robot_comm.addRobot(1)
-robot_comm.addRobot(2)
 
-ang = 10.0
+ang = 0.0
 dist = 0.0
-out = 0.0
+out = False
 
 def comm_loop():
     global ang, dist, out
     i = 0
+
     while True:
         id_robot = robot_comm.robots[i]
+
+        robot_comm.enviarRobot(id_robot, ang , dist, out)
+        time.sleep(0.2)
+        robot_comm.recibirRespuesta()
+
         ang += 5
-
-        robot_comm.enviarRobot(id_robot, ang, dist, out)
-
-        time.sleep(1)
+        dist += 1
 
         i += 1
         if i >= len(robot_comm.robots):

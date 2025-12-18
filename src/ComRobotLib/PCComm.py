@@ -59,14 +59,14 @@ class Interface:
         def start_fight():
             for rid in self.robot_comm.robot_states:
                 self.robot_comm.robot_states[rid] = "peleando"
-            self.robot_comm.log("PELEA →", "Se inició la pelea")
+            self.robot_comm.log("PELEA ->", "Se inició la pelea")
             return redirect(url_for('index'))
 
         @self.app.route('/stop')
         def stop_fight():
             for rid in self.robot_comm.robot_states:
                 self.robot_comm.robot_states[rid] = "fuera de combate"
-            self.robot_comm.log("PELEA →", "Se detuvo la pelea")
+            self.robot_comm.log("PELEA ->", "Se detuvo la pelea")
             return redirect(url_for('index'))
     
     def run_server(self, host="0.0.0.0", port=5000, debug=True):
@@ -126,9 +126,9 @@ class RobotComm:
         if robot_id not in self.robots:
             self.robots.append(robot_id)
             self.robot_states[robot_id] = "esperando"
-            self.robot_comm_status[robot_id] = True  # Por defecto comunicación OK
+            self.robot_comm_status[robot_id] = True
             print(f"[REGISTRADO] Robot ID {robot_id}")
-            self.log("REGISTRO →", f"Robot {robot_id}")
+            self.log("REGISTRO ->", f"Robot {robot_id}")
     
     def update_comm_status(self, robot_id, comm_ok):
         """
@@ -150,7 +150,7 @@ class RobotComm:
         if id_robot not in self.robots:
             msg = f"[ERROR] Robot ID {id_robot} no está registrado. Ignorando mensaje."
             print(msg)
-            self.log("ERROR →", msg)
+            self.log("ERROR ->", msg)
             return
 
         msg_bytes = struct.pack('Iff?', id_robot, ang, dist, out)
@@ -161,20 +161,21 @@ class RobotComm:
         
 
     # - Metodo recibir respuesta robot por UDP - #
-    #def recibirRespuesta(self):
-    #    """
-    #    Descripcion: Esta funcion gestiona la respuesta recibida del maestro
-    #   Args: None
-    #    Returns: None
-    #    """
-    #    try:
-    #        response = self._client.recv(1024)
-    #        if response.find("OK"):
-    #            print(f"Response -> {response.decode()}")
-    #            self.respuesta = True
-
-    #    except Exception as e:
-    #        print(f"Error envío al robot {id}: {e}")
+    def recibirRespuesta(self):
+        """
+        Descripcion: Esta funcion gestiona la respuesta recibida del maestro
+       Args: None
+        Returns: None
+        """
+        try:
+            response = self._client.recv(1024)
+            if response:
+                print(f"Response -> {response.decode(errors='ignore')}")
+                return True
+            return False
+        except socket.timeout:
+            print("Timeout esperando respuesta del robot")
+            return False
 
     def close(self):
         """Cierra el socket correctamente."""
