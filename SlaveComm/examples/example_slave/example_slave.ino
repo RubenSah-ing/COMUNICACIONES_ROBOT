@@ -1,7 +1,6 @@
 #include "SlaveComm.h"
 
 SlaveComm slave;
-//prueba
 
 uint8_t masterMAC[] = {0xA4,0xCF,0x12,0xF5,0x20,0x53};
 

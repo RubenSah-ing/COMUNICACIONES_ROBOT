@@ -1,19 +1,25 @@
 #include "SlaveComm.h"
 
-SlaveComm *globalSlave = nullptr;   // Puntero global para acceder a la instancia del objeto desde el callback
+SlaveComm *globalSlave = nullptr;   
 
 
-// CALLBACK GLOBAL
-void ESPNOWReceiveCallback(uint8_t *mac, uint8_t *incomingMsg, uint8_t len) {
-  if (globalSlave == nullptr) return;   // Si no hay instancia, no procesa nada
+void Slave_OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
+    if (sendStatus == 0) {
+        Serial.println("ESPNOW enviado correctamente");
+    }
+    else {
+        Serial.println("ESPNOW no enviado: error");
+    }
+}
 
-  char buffer[256];                     // Buffer para almacenar el mensaje recibido
-  memcpy(buffer, incomingMsg, len);     // Copia el mensaje recibido al buffer
-  buffer[len] = 0;                      // Añade terminación de cadena
 
-  globalSlave->processIncoming(buffer); // Llama al método de la instancia para procesar el mensaje
-  Serial.print("Mensaje recibido: ");
-  Serial.println(buffer);
+// Callback de ESP-NOW cuando se reciben datos
+void Slave_OnDataRecv(uint8_t *mac, uint8_t *incomingData, uint8_t len) {
+    if (!globalSlave) return;
+
+    Serial.printf("Paquete recibido ESP-NOW", len);
+
+    globalSlave->processIncoming(incomingData, len);
 }
 
 
@@ -25,61 +31,78 @@ SlaveComm::SlaveComm() {
 // INICIALIZACIÓN
 bool SlaveComm::begin(const char *ssid, const char *password) {
 
-  globalSlave = this;         // Guarda esta instancia en el puntero global
+  globalSlave = this;       
 
-  WiFi.mode(WIFI_STA);        // Pone el módulo en modo estación
-  WiFi.begin(ssid, password); // Conecta al WiFi
-  while (WiFi.status() != WL_CONNECTED) delay(100);  // Espera hasta conectarse
+  WiFi.mode(WIFI_STA);        
+  WiFi.disconnect();
+  WiFi.begin(ssid, password); 
+  while (WiFi.status() != WL_CONNECTED){
+    delay(100); 
+    Serial.println(".");
+  }
 
-  // Obtiene la MAC del propio dispositivo y la guarda en _myMACAddress
+  Serial.print("MAC: ");
   Serial.println(WiFi.macAddress());
 
-  if (esp_now_init() != 0) return false;  // Inicializa ESP-NOW y verifica errores
+  if (esp_now_init() != 0) {
+    Serial.print("Error iniciando ESPNOW");
+    return false;  
+  }
+  Serial.println("ESPNOW iniciado");
 
-  esp_now_set_self_role(ESP_NOW_ROLE_COMBO);           // Permite enviar y recibir
-  esp_now_register_recv_cb(ESPNOWReceiveCallback);     // Registra el callback
+  esp_now_set_self_role(ESP_NOW_ROLE_COMBO);           
+  esp_now_register_recv_cb(Slave_OnDataRecv);     
 
-  if (_masterMACSet)                                   // Si ya sabemos la MAC del maestro...
+  if (_masterMACSet)                                  
     esp_now_add_peer(_masterMACAddress, ESP_NOW_ROLE_CONTROLLER, 1, NULL, 0);
 
-  return true;                                         // Inicialización exitosa
+  return true;                                         
 }
 
 
 // GUARDAR MAC DEL MAESTRO
 void SlaveComm::setMasterMACAddress(uint8_t mac[6]) {
-  memcpy(_masterMACAddress, mac, 6);   // Copia la MAC proporcionada al atributo
-  _masterMACSet = true;                // Marca que ya está configurada
+  memcpy(_masterMACAddress, mac, 6);
+  _masterMACSet = true;                
 }
 
 
 // PROCESAR MENSAJE RECIBIDO
-void SlaveComm::processIncoming(const char *msg) {
-  int ID;
-  float ang, dist;
-  int out;
-
-  // Parsea el mensaje con formato esperado
-  if (sscanf(msg, "id=%d, ang=%f, dist=%f, Out=%d",
-             &ID, &ang, &dist, &out) == 4) {
-
-    if (ID == _id) {   // Solo procesa si el mensaje es para este esclavo
-      _angle = ang;    // Guarda ángulo
-      _distance = dist;// Guarda distancia
-      _out = out;      // Guarda salida
-      sendOK();        // Envía confirmación al maestro
+void SlaveComm::processIncoming(const uint8_t *data, uint8_t len){
+    if (len != 13) {
+        Serial.printf("Paquete descartado, len=%d\n", len);
+        return;
     }
-  }
+
+    uint32_t id;
+    float ang, dist;
+    bool out;
+
+    memcpy(&id,   data,      4);
+    memcpy(&ang,  data + 4,  4);
+    memcpy(&dist, data + 8,  4);
+    memcpy(&out,  data + 12, 1);
+
+    Serial.printf(
+        "RX BIN → ID:%u ANG:%.2f DIST:%.2f OUT:%d\n",
+        id, ang, dist, out
+    );
+
+    _angle = ang;
+    _distance = dist;
+    _out = out;
+
+    sendOK();
 }
 
 
-// ENVIAR OK AL MAESTRO
 void SlaveComm::sendOK() {
-  char msgOut[20];                   // Mensaje de salida
-  sprintf(msgOut, "OK id=%d", _id);  // Construye mensaje OK con el ID
-
-  esp_now_send(_masterMACAddress, (uint8_t *)msgOut, strlen(msgOut)); // Envía al maestro
+    char msg[32];
+    snprintf(msg, sizeof(msg), "OK id=%d", _id);
+    esp_now_send(_masterMACAddress, (uint8_t *)msg, strlen(msg) + 1);
 }
+
+
 
 bool SlaveComm::dataChanged() {
     if (_firstData) {
@@ -87,7 +110,7 @@ bool SlaveComm::dataChanged() {
         _lastAngle = _angle;
         _lastDistance = _distance;
         _lastOut = _out;
-        return true;     // Primer dato siempre se considera "cambiado"
+        return true; 
     }
 
     bool changed = false;
@@ -99,7 +122,6 @@ bool SlaveComm::dataChanged() {
         changed = true;
     }
 
-    // Actualiza los valores anteriores
     _lastAngle = _angle;
     _lastDistance = _distance;
     _lastOut = _out;

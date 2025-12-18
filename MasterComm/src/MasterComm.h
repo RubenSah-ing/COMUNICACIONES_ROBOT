@@ -1,62 +1,56 @@
 #ifndef MASTERCOMM_H
 #define MASTERCOMM_H
 
-#include <Arduino.h>        // Funciones básicas de Arduino
-#include <ESP8266WiFi.h>    // Manejo de WiFi en ESP8266
-#include <espnow.h>         // Biblioteca para comunicación ESP-NOW
-#include <WiFiUdp.h>        // Biblioteca para comunicación UDP
+#include <Arduino.h>
+#include <ESP8266WiFi.h>
+#include <espnow.h>
 
 class MasterComm {
-public:
-    MasterComm();           // Constructor
+    private:
+        WiFiServer _server;
+        WiFiClient _client;
+        unsigned int _port;
 
-    bool begin(const char *ssid, const char *password, unsigned int udpPort);
-    // Inicializa WiFi, ESP-NOW y el puerto UDP
+        static const int _maxRobots = 2;
+        uint8_t _robotMACs[_maxRobots][6];
+        int _robotCount;
 
-    void addRobotMAC(uint8_t mac[6]);   // Agrega una MAC de robot (esclavo)
-    void enableBroadcastIP(const char *ip) { _broadcastIP = ip; }
-    // Guarda la IP de broadcast para enviar mensajes UDP
+        float _angle;
+        float _distance;
+        bool _out;
 
-    void readUDP();        // Lee mensajes entrantes por UDP
-    void sendToRobot(int id, const char *msg);  // Envía mensaje a un robot por ESP-NOW
-    void processRobotResponse(const char *msg); // Procesa respuesta recibida de un robot
+        float _lastAngle;
+        float _lastDistance;
+        bool _lastOut;
+        bool _firstData;
 
-    float getAngle() { return _angle; }
-    float getDistance() { return _distance; }
-    int getOut() { return _out; }
+    public:
+        MasterComm(unsigned int port);
 
-    bool dataChanged();
-    
+        bool begin(const char *ssid, const char *password);
 
-private:
-    WiFiUDP _udp;                // Objeto UDP para enviar/recibir datagramas
-    unsigned int _udpPort;       // Puerto UDP en uso
-    String _broadcastIP;         // IP de broadcast configurada
+        void addRobotMAC(uint8_t mac[6]);
 
-    static const int MAX_ROBOTS = 10;          // Máximo de robots permitidos
-    uint8_t _robotMACs[MAX_ROBOTS][6];         // Lista de direcciones MAC de robots
-    int _robotCount;                           // Cantidad actual de robots registrados
-    
-    int _id;                      // ID del dispositivo esclavo
-    float _angle;                 // Valor recibido: ángulo
-    float _distance;              // Valor recibido: distancia
-    int _out;                     // Valor recibido: salida o estado
+        void handleServer();
+        void readTCP();
 
-    float _lastAngle = 0;
-    float _lastDistance = 0;
-    int _lastOut = 0;
-    bool _firstData = true;
+        void sendToRobot(int id, float ang, float dist, bool out);
+        void processRobotResponse(const char *msg);
 
+        float getAngle();
+        float getDistance();
+        bool getOut();
 
+        bool dataChanged();
 };
 
+// Callback de ESP-NOW cuando se envían datos
 void Master_OnDataSent(uint8_t *mac_addr, uint8_t sendStatus);
-//// Callback de ESP-NOW cuando se envían datos
 
+// Callback de ESP-NOW cuando se reciben datos
 void Master_OnDataRecv(uint8_t *mac, uint8_t *incomingData, uint8_t len);
-//// Callback de ESP-NOW cuando se reciben datos
 
+// Puntero global para acceder a la instancia del maestro desde los callbacks
 extern MasterComm *MasterGlobal;
-//// Puntero global para acceder a la instancia del maestro desde los callbacks
 
 #endif

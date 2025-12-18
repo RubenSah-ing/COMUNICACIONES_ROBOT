@@ -10,7 +10,7 @@ class SlaveComm {
     int _id;                      // ID del dispositivo esclavo
     float _angle;                 // Valor recibido: ángulo
     float _distance;              // Valor recibido: distancia
-    int _out;                     // Valor recibido: salida o estado
+    bool _out;                     // Valor recibido: salida o estado
 
     uint8_t _masterMACAddress[6]; // Dirección MAC del maestro
     uint8_t _myMACAddress[6];     // Dirección MAC propia del esclavo
@@ -29,19 +29,21 @@ class SlaveComm {
     int getID()        { return _id; }        // Obtener ID del esclavo
     float getAngle()   { return _angle; }     // Obtener ángulo recibido
     float getDistance(){ return _distance; }  // Obtener distancia recibida
-    int getOut()       { return _out; }       // Obtener valor de salida
+    bool getOut()       { return _out; }       // Obtener valor de salida
 
     void setID(int id) { _id = id; }          // Establecer ID del esclavo
     void setMasterMACAddress(uint8_t mac[6]); // Configurar dirección MAC del maestro
 
     void sendOK();                            // Enviar mensaje de confirmación al maestro
 
-    void processIncoming(const char *msg);    // Procesar mensaje recibido
+    void processIncoming(const uint8_t *data, uint8_t len);    // Procesar mensaje recibido
 
     bool dataChanged();
 };
 
-void ESPNOWReceiveCallback(uint8_t *mac, uint8_t *incomingMsg, uint8_t len); // Callback de recepción de ESP-NOW
+void Slave_OnDataRecv(uint8_t *mac, uint8_t *incomingMsg, uint8_t len); // Callback de recepción de ESP-NOW
+
+void Slave_OnDataSent(uint8_t *mac_addr, uint8_t sendStatus);
 
 extern SlaveComm *globalSlave;               // Puntero global a la instancia del esclavo
 
