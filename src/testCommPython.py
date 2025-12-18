@@ -7,6 +7,7 @@ robot_comm = RobotComm(ip="10.74.94.237", logfile="datalog.txt")
 # Registrar robots
 robot_comm.addRobot(0)
 robot_comm.addRobot(1)
+robot_comm.addRobot(2)
 
 ang = 0.0
 dist = 0.0

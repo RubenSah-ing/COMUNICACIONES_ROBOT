@@ -96,6 +96,7 @@ class RobotComm:
         self.robot_states = {}  #id: estado de combate
         self.robot_comm_status = {}  #id: estado de comunicación (True/False)
         self.logfile = logfile
+        self.actual_id = None
 
         # Webcam
         self.camera = cv2.VideoCapture(0)
@@ -147,6 +148,7 @@ class RobotComm:
         Descripcion: Esta funcion envia un mensaje al robot maestro por UDP, indicando el id del robot de destino
         Args: id_robot, angulo, distancia, in/out
         """
+        self.actual_id = id_robot
         if id_robot not in self.robots:
             msg = f"[ERROR] Robot ID {id_robot} no está registrado. Ignorando mensaje."
             print(msg)
@@ -168,13 +170,16 @@ class RobotComm:
         Returns: None
         """
         try:
+            self._client.settimeout(1)
             response = self._client.recv(1024)
+            self._client.settimeout(None)
+
             if response:
                 print(f"Response -> {response.decode(errors='ignore')}")
                 return True
             return False
-        except socket.timeout:
-            print("Timeout esperando respuesta del robot")
+        except socket.timeout as e:
+            print(f"Tiempo de espera agotado esperando al robot {self.actual_id}")
             return False
 
     def close(self):
