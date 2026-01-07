@@ -8,7 +8,7 @@ from ComRobotLib import RobotComm
 import time
 
 # Instanciar la comunicacion con los robots
-robot_comm = RobotComm(ip="10.74.94.237", logfile="datalog.txt")
+robot_comm = RobotComm(ip="192.168.137.161", logfile="datalog.txt")
 
 # Registrar robots
 robot_comm.addRobot(0)

@@ -19,6 +19,7 @@ void Master_OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
 
 // Callback de recepcion por ESP - NOW
 void Master_OnDataRecv(uint8_t *mac, uint8_t *incomingData, uint8_t len) {
+    // Si no existe una instacia al maestro, salir
     if (!MasterGlobal) {
         return;
     }
@@ -135,8 +136,9 @@ void MasterComm::sendToRobot(int id, float ang, float dist, bool out) {
         return;
     }
 
-    // Preparar y enviar datos por ESP-NOW
+    // Buffer para almacenar datos de envio
     uint8_t buf[13];
+    // Copiar contenido de cada variable al buffer
     memcpy(buf,      &id,  4);
     memcpy(buf + 4,  &ang, 4);
     memcpy(buf + 8,  &dist,4);
@@ -163,7 +165,7 @@ bool MasterComm::getOut() {
 
 // --- PROCESAR RESPUESTA ROBOT ESCLAVO --- //
 void MasterComm::processRobotResponse(const char *msg) {
-    // Enviar respuesta al cliente TCP si está conectado
+    // Enviar respuesta al cliente TCP existe y si está conectado
     if (_client && _client.connected()) {
         _client.println(msg);
     }
@@ -182,17 +184,20 @@ void MasterComm::readTCP() {
         return;
     }
 
-    // Leer datos del cliente TCP
+    // Buffer para recibir datos TCP
     uint8_t buf[PACKET_SIZE];
+    // Leer tamaño de datos recibidos por TCP
     size_t readBytes = _client.read(buf, PACKET_SIZE);
+    // Si faltan datos, salir
     if (readBytes != PACKET_SIZE){
         return;
     }
 
-    // Extraer datos del buffer
+    
     uint32_t id;
     float ang, dist;
     bool out;
+    // Copiar contenido del buffer a cada variable
     memcpy(&id,   buf,      4);
     memcpy(&ang,  buf + 4,  4);
     memcpy(&dist, buf + 8,  4);
