@@ -136,7 +136,7 @@ void MasterComm::handleServer(){
 
 // --- ENVIAR DATOS A ROBOT ESCLAVO POR ID --- //
 void MasterComm::sendToRobot(int id, float ang, float dist, bool out) {
-    // Comprobar ID valido
+    // Comprobar que ID es valido
     int idx = id - 1;
     if (idx < 0 || idx >= _robotCount) {
         return;

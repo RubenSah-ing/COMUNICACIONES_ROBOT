@@ -9,9 +9,11 @@ SlaveComm *globalSlave = nullptr;
 // --- CALBACKS ESP NOW --- //
 // Callback de envio por ESP - NOW
 void Slave_OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
+    // Si no hubo error de envio
     if (sendStatus == 0) {
         Serial.println("ESPNOW enviado correctamente");
     }
+    // Si hubo error de envio
     else {
         Serial.println("ESPNOW no enviado: error");
     }
@@ -19,9 +21,11 @@ void Slave_OnDataSent(uint8_t *mac_addr, uint8_t sendStatus) {
 
 // Callback de recepcion por ESP - NOW
 void Slave_OnDataRecv(uint8_t *mac, uint8_t *incomingData, uint8_t len) {
-    if (!globalSlave) {return;}
-    // Apuntar al metodo de la clase para poder usar el callback
+    if (!globalSlave) {
+        return;
+    }
     Serial.printf("Paquete recibido ESP-NOW", len);
+    // Apuntar al metodo de la clase para poder usar el callback
     globalSlave->processIncoming(incomingData, len);
 }
 
@@ -74,15 +78,14 @@ void SlaveComm::processIncoming(const uint8_t *data, uint8_t len){
         return;
     }
 
-    // Extraer datos del paquete
     uint32_t id;
     float ang, dist;
     bool out;
+    // Copiar datos recibidos del buffer a las variables respectivas
     memcpy(&id,   data,      4);
     memcpy(&ang,  data + 4,  4);
     memcpy(&dist, data + 8,  4);
     memcpy(&out,  data + 12, 1);
-    //Serial.printf("RX BIN → ID:%u ANG:%.2f DIST:%.2f OUT:%d\n",id, ang, dist, out);
 
     _angle = ang;
     _distance = dist;
@@ -95,15 +98,18 @@ void SlaveComm::processIncoming(const uint8_t *data, uint8_t len){
 
 // --- ENVIAR MENSAJE DE CONFIRMACIÓN AL MAESTRO --- //
 void SlaveComm::sendOK() {
-    // Construir y enviar mensaje de confirmación por ESP-NOW
+    // Buffer para enviar respuesta
     char msg[32];
+    // Construir mensaje con OK tipo string
     snprintf(msg, sizeof(msg), "OK id=%d", _id);
+    // Enviar mensaje por ESP-NOW con respuesta
     esp_now_send(_masterMACAddress, (uint8_t *)msg, strlen(msg) + 1);
 }
 
 
 // --- VERIFICAR SI LOS DATOS HAN CAMBIADO --- //
 bool SlaveComm::dataChanged() {
+    //Si es la primera vex que se recibe dato
     if (_firstData) {
         _firstData = false;
         _lastAngle = _angle;
@@ -111,9 +117,9 @@ bool SlaveComm::dataChanged() {
         _lastOut = _out;
         return true; 
     }
-
     bool changed = false;
 
+    // Si las variables anteriores son diferentes de las recibidas
     if (_angle != _lastAngle || _distance != _lastDistance || _out != _lastOut) {
         changed = true;
     }
