@@ -25,8 +25,13 @@ void Master_OnDataRecv(uint8_t *mac, uint8_t *incomingData, uint8_t len) {
     }
     // Copiar datos recibidos a un buffer temporal
     char msg[200];
-    if (len >= sizeof(msg)) len = sizeof(msg) - 1;
+    // Si el tamaño del mensaje recibido es mayor al tamaño del buffer, ajustar tamaño de mensaje recibido
+    if (len >= sizeof(msg)) {
+        len = sizeof(msg) - 1;
+    }
+    // Copiar datos recibidos al buffer msg
     memcpy(msg, incomingData, len);
+    // Añadir caracter final de cadena
     msg[len] = '\0';
     Serial.print("Respuesta robot -> ");
 
@@ -95,11 +100,12 @@ bool MasterComm::begin(const char *ssid, const char *password) {
 
 // --- AÑADIR MAC ROBOT ESCLAVO --- //
 void MasterComm::addRobotMAC(uint8_t mac[6]) {
-    // Comprobar si hay espacio para más robots
+    // Comprobar si hay espacio para más robots. Si no lo hay
     if (_robotCount >= _maxRobots){
         Serial.println("Numero maximo de robots registrados");
         return; 
     }
+    // Si lo hay
     else {
         // Copiar MAC en memoria 
         memcpy(_robotMACs[_robotCount], mac, 6);
@@ -206,9 +212,11 @@ void MasterComm::readTCP() {
     // Si el ID es distinto de 0, enviar a robot esclavo
     if (id != 0) {
         Serial.printf("Mensaje esclavo -> ID:%u ANG:%.2f DIST:%.2f OUT:%d\n",id, ang, dist, out);
-        // Enviar datos al robot por ID
+        // Buffer para enviar datos
         char msg[80];
+        // Convertir a string con formato los datos
         snprintf(msg, sizeof(msg),"ID:%u ANG:%.2f DIST:%.2f OUT:%d",id, ang, dist, out);
+        //Llamar a sendToRobot para envio por ESPNOW
         sendToRobot(id, ang, dist, out);
     }
     // Si el ID es 0, actualizar datos del maestro
@@ -217,7 +225,7 @@ void MasterComm::readTCP() {
         _angle = ang;
         _distance = dist;
         _out = out;
-        // Simular respuesta OK al cliente TCP
+        // Enviar OK proveniente de maestro
         processRobotResponse("OK id=0");
     }
 }
